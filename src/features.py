@@ -9,6 +9,25 @@ def harris_score(img):
     """ Returns the smaller eigenvalue of the structure tensor for each pixel in img.
     Pre: img is grayscale, float, [0,1]. Returns an array the same shape as img."""
     # todo
+    dx = convolve(img, sobel_x)
+    dy = convolve(img, sobel_y)
+
+    dx2 = dx * dx
+    dxdy = dx * dy
+    dy2 = dy * dy
+
+    A = separable_filter(dx2, gauss1d5)
+    B = separable_filter(dxdy, gauss1d5)
+    C = separable_filter(dy2, gauss1d5)
+    
+    d = A*C - B*B
+    t = (A + C) / 2
+    eig1 = t + np.sqrt(t**2 - d)
+    eig2 = t - np.sqrt(t**2 - d)
+
+    return np.minimum(eig1, eig2)
+    
+    
 
 def harris_corners(img, threshold):
     scores = harris_score(img)
@@ -23,17 +42,17 @@ def get_harris_points(harris_mask):
 def extract_MOPS(img, point):
     """ point is in (j, i) format so it can be treated as (x, y) with origin
     in the top left """
-    # todo - translate center patch to origin
+    # translate center patch to origin
     y, x = point
     tx1 = np.array([
-        [1, 0, 0],
-        [0, 1, 0],
+        [1, 0, -x],
+        [0, 1, -y],
         [0, 0, 1]], dtype=np.float32)
 
-    # todo -  scale down by 1/8
+    # scale down by 1/8
     scale = np.array([
-        [1, 0, 0],
-        [0, 1, 0],
+        [.125, 0, 0],
+        [0, .125, 0],
         [0, 0, 1]], dtype=np.float32)
     
     # rotate to gradient magnitude direction to 0
@@ -46,16 +65,18 @@ def extract_MOPS(img, point):
 
     # translate so a 5x5 patch has its corner at (0, 0)
     tx2 = np.array([
-        [1, 0, 0],
-        [0, 1, 0],
+        [1, 0, 2.5],
+        [0, 1, 2.5],
         [0, 0, 1]], dtype=np.float32)
 
     # compose the transformations and warp the image into a 5x5 output image
-    M = np.eye(3) # TODO - compose all the transformations
+    M = tx2 @ rot @ scale @ tx1 # TODO - compose all the transformations
     
     desc = geometry.warp(img, M[:2,:], dsize=(5, 5))
 
     # TODO: standardize intensity values
+    desc -= desc.mean()
+    desc /= desc.std()
     
     return desc
 
@@ -185,64 +206,3 @@ def overlay_features(img, corners):
     out[corners>0, :] = [1, 0, 0]
     return out
 
-
-# def harris_score(img):
-#     """ Returns the smaller eigenvalue of the structure tensor for each pixel in img.
-#     Pre: img is grayscale, float, [0,1]. Returns an array the same shape as img."""
-#     dx = convolve(img, sobel_x)
-#     dy = convolve(img, sobel_y)
-#     A = separable_filter(dx * dx, gauss1d5)
-#     B = separable_filter(dx * dy, gauss1d5)
-#     C = separable_filter(dy * dy, gauss1d5)
-
-#     det = A*C - B*B
-#     tr = A+C
-    
-#     m = tr / 2
-#     p = det
-#     sqrtm2mp = np.sqrt(m**2 - p)
-#     eig1 = m - sqrtm2mp
-#     eig2 = m + sqrtm2mp
-#     return np.minimum(eig1, eig2)
-
-
-# def extract_MOPS(img, point):
-#     """ point is in (j, i) format so it can be treated as (x, y) with origin
-#     in the top left """
-#     # translate center patch to origin
-#     y, x = point
-#     tx1 = np.array([
-#         [1, 0, -x],
-#         [0, 1, -y],
-#         [0, 0, 1]], dtype=np.float32)
-
-#     # scale down by 1/8
-#     scale = np.array([
-#         [.125, 0, 0],
-#         [0, .125, 0],
-#         [0, 0, 1]], dtype=np.float32)
-    
-#     # rotate to gradient magnitude direction to 0
-#     dx, dy = filtering.grad(img)[y, x, :]
-#     angle = np.arctan2(dy, dx)
-#     rot = np.array([
-#         [ np.cos(-angle), np.sin(-angle), 0],
-#         [-np.sin(-angle), np.cos(-angle), 0],
-#         [0, 0, 1]], dtype=np.float32)
-
-#     # translate so a 5x5 patch has its corner at (0, 0)
-#     tx2 = np.array([
-#         [1, 0, 2.5],
-#         [0, 1, 2.5],
-#         [0, 0, 1]], dtype=np.float32)
-
-#     # compose the transformations and warp the image into a 5x5 output image
-#     M = tx2 @ rot @ scale @ tx1 # TODO - compose all the transformations
-    
-#     desc = geometry.warp(img, M[:2,:], dsize=(5, 5))
-
-#     # TODO: standardize intensity values
-#     desc -= desc.mean()
-#     desc /= desc.std()
-    
-#     return desc
