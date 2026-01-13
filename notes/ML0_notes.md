@@ -1,5 +1,12 @@
 ## ML0: Linear Models and Loss Functions
 
+**Goals**:
+
+* Be able to formulate a univariate linear regression problem and calculate the mean squared error (MSE) cost function.
+* Be able to formulate a univariate logistic regression (classification) problem and calculate the logistic loss cost function.
+* Know the meaning of some terminology:
+  * Regression, (binary) classification, lost/cost function, weight, bias, mean squared error, log/logistic/binary cross-entropy loss
+
 ### Introduction: Once upon a time...
 
 Early in the course, we talked about a continuum of computer vision problems, ranging from low-level (closer to the pixels) to high-level (closer to the semantic meaning of the pixels).
