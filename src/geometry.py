@@ -20,6 +20,40 @@ def warp(img, tx, dsize=None):
     out = np.zeros((DH, DW))
 
     # your code here
+    Tinv = np.linalg.inv(M)
+    for xd in range(DW):
+        for yd in range(DH):
+            dest = np.array([xd, yd, 1])
+            xs, ys, w = (Tinv @ dest)
+            xs, ys = round(xs / w), round(ys / w) # nearest neighbor
+            if xs not in range(W) or ys not in range(H):
+                out[yd, xd] = 0
+            else:
+                out[yd, xd] = img[ys, xs]
+            # xs, ys = xs / w, ys / w
+            # x1, y1 = math.floor(xs), math.floor(ys)
+            # x2, y2 = x1 + 1, y1 + 1
+            # if x1 not in range(W) or x2 not in range(W) or y1 not in range(H) or y2 not in range(H):
+            #     out[yd, xd] = 0
+            # else:
+            #     dx1 = xs - x1
+            #     dy1 = ys - y1
+            #     dx2 = x2 - xs
+            #     dy2 = y2 - ys
+            #     out[yd, xd] = img[y1, x1] * (dx2 * dy2) + img[y2, x1] * dy1 * dx2 + img[y1, x2] * dy2 * dx1 + img[y2, x2] * dy1 * dx1
+
+    # # numpy speed-up
+    # Tinv = np.linalg.inv(M)
+    # dest_matrix = np.zeros((3, (DH*DW)), dtype=int)
+    # for i in range(DW):
+    #     for j in range(DH):
+    #         dest_matrix[:,i*DH+j] = np.array([i, j, 1])
+    # source_matrix = Tinv @ dest_matrix
+    # source_matrix /= source_matrix[2]
+    # xys = source_matrix[:2]
+    # xy1 = np.floor(xys).astype(int)
+    # xy2 = xy1 + 1
+    # out[::-1] 
     
     return out
 
